@@ -1,14 +1,15 @@
 import AppKit
 
-class DetailPanelController: NSObject {
+class DetailPanelWindowController: NSObject {
+    var isShown: Bool { panel.isVisible }
+
     private var panel: NSPanel!
     private var contentView: NSView!
-    private var cpuSection: SectionView!
-    private var memorySection: SectionView!
-    private var diskSection: SectionView!
-    private var networkSection: SectionView!
-    private var systemInfoSection: SectionView!
-
+    private var cpuSection: StatSectionView!
+    private var memorySection: StatSectionView!
+    private var diskSection: StatSectionView!
+    private var networkSection: StatSectionView!
+    private var systemInfoSection: StatSectionView!
     private let systemMonitor = SystemMonitor()
     private var updateTimer: Timer?
 
@@ -20,11 +21,11 @@ class DetailPanelController: NSObject {
 
     private func setupPanel() {
         let panelWidth: CGFloat = 320
-        let panelHeight: CGFloat = 480
+        let panelHeight: CGFloat = 420
 
         panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: panelHeight),
-            styleMask: [.nonactivatingPanel, .fullSizeContentView, .titled],
+            styleMask: [.nonactivatingPanel, .fullSizeContentView, .titled, .closable],
             backing: .buffered,
             defer: false
         )
@@ -35,6 +36,7 @@ class DetailPanelController: NSObject {
         panel.isMovableByWindowBackground = true
         panel.backgroundColor = NSColor(hex: "#1e1e1e")
         panel.hasShadow = true
+        panel.isReleasedWhenClosed = false
     }
 
     private func setupSections() {
@@ -43,64 +45,40 @@ class DetailPanelController: NSObject {
         contentView.layer?.backgroundColor = NSColor(hex: "#1e1e1e").cgColor
         panel.contentView = contentView
 
-        let scrollView = NSScrollView(frame: contentView.bounds)
-        scrollView.autoresizingMask = [.width, .height]
-        scrollView.hasVerticalScroller = true
-        scrollView.drawsBackground = false
-        scrollView.backgroundColor = NSColor(hex: "#1e1e1e")
-        contentView.addSubview(scrollView)
-
-        let containerView = NSView()
-        containerView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.documentView = containerView
-
-        cpuSection = SectionView(title: "CPU", icon: "cpu")
-        memorySection = SectionView(title: "Memory", icon: "memorychip")
-        diskSection = SectionView(title: "Disk", icon: "internaldrive")
-        networkSection = SectionView(title: "Network", icon: "network")
-        systemInfoSection = SectionView(title: "System", icon: "desktopcomputer")
-
-        [cpuSection, memorySection, diskSection, networkSection, systemInfoSection].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            containerView.addSubview($0)
-        }
+        let mainStack = NSStackView()
+        mainStack.orientation = .vertical
+        mainStack.spacing = 8
+        mainStack.translatesAutoresizingMaskIntoConstraints = false
+        mainStack.edgeInsets = NSEdgeInsets(top: 16, left: 12, bottom: 16, right: 12)
+        contentView.addSubview(mainStack)
 
         NSLayoutConstraint.activate([
-            containerView.widthAnchor.constraint(equalToConstant: 320),
-
-            cpuSection.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
-            cpuSection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            cpuSection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-
-            memorySection.topAnchor.constraint(equalTo: cpuSection.bottomAnchor, constant: 8),
-            memorySection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            memorySection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-
-            diskSection.topAnchor.constraint(equalTo: memorySection.bottomAnchor, constant: 8),
-            diskSection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            diskSection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-
-            networkSection.topAnchor.constraint(equalTo: diskSection.bottomAnchor, constant: 8),
-            networkSection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            networkSection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-
-            systemInfoSection.topAnchor.constraint(equalTo: networkSection.bottomAnchor, constant: 8),
-            systemInfoSection.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
-            systemInfoSection.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
-            systemInfoSection.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12)
+            mainStack.topAnchor.constraint(equalTo: contentView.topAnchor),
+            mainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            mainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            mainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
+
+        cpuSection = StatSectionView(title: "CPU", icon: "cpu")
+        memorySection = StatSectionView(title: "Memory", icon: "memorychip")
+        diskSection = StatSectionView(title: "Disk", icon: "internaldrive")
+        networkSection = StatSectionView(title: "Network", icon: "network")
+        systemInfoSection = StatSectionView(title: "System", icon: "desktopcomputer")
+
+        [cpuSection, memorySection, diskSection, networkSection, systemInfoSection].forEach { mainStack.addArrangedSubview($0) }
     }
 
-    func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
+    func showPanel(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
         updateSections()
         panel.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
 
+        updateTimer?.invalidate()
         updateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateSections()
         }
     }
 
-    func hide() {
+    func hidePanel() {
         updateTimer?.invalidate()
         updateTimer = nil
         panel.orderOut(nil)
@@ -109,25 +87,24 @@ class DetailPanelController: NSObject {
     private func updateSections() {
         let stats = systemMonitor.getStats()
 
-        cpuSection.setPrimaryValue("\(stats.cpuUsage)%")
-        cpuSection.setSubtitle("All Cores")
+        cpuSection.setPrimaryValue("\(Int(stats.cpuUsage))%")
+        cpuSection.setSubtitle("All Cores Active")
 
-        let memPercent = stats.memoryPercent
-        memorySection.setPrimaryValue("\(stats.memoryUsedShort)")
-        memorySection.setSubtitle("Used: \(String(format: "%.1f", memPercent))%")
+        memorySection.setPrimaryValue(stats.memoryUsedShort)
+        memorySection.setSubtitle("\(String(format: "%.1f", stats.memoryPercent))% of \(stats.memoryTotal)")
 
-        diskSection.setPrimaryValue("\(stats.diskUsed)/\(stats.diskTotal)")
-        diskSection.setSubtitle("Capacity")
+        diskSection.setPrimaryValue(stats.diskUsed)
+        diskSection.setSubtitle("of \(stats.diskTotal)")
 
-        networkSection.setPrimaryValue("↓ \(stats.networkDown)  ↑ \(stats.networkUp)")
-        networkSection.setSubtitle("Speed")
+        networkSection.setPrimaryValue("↓ \(stats.networkDown)")
+        networkSection.setSubtitle("↑ \(stats.networkUp)")
 
         systemInfoSection.setPrimaryValue(stats.uptime)
         systemInfoSection.setSubtitle(stats.hostname)
     }
 }
 
-class SectionView: NSView {
+class StatSectionView: NSView {
     private var titleLabel: NSTextField!
     private var primaryValueLabel: NSTextField!
     private var subtitleLabel: NSTextField!
@@ -192,18 +169,5 @@ class SectionView: NSView {
 
     func setSubtitle(_ value: String) {
         subtitleLabel.stringValue = value
-    }
-}
-
-extension NSColor {
-    convenience init(hex: String) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-        var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-        let r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-        let g = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-        let b = CGFloat(rgb & 0x0000FF) / 255.0
-        self.init(red: r, green: g, blue: b, alpha: 1.0)
     }
 }

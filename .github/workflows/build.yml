@@ -22,13 +22,14 @@ jobs:
 
       - name: Build
         run: |
-          xcodebuild -project iStatBar.xcodeproj -scheme iStatBar -configuration Debug build CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO 2>&1 | tee build.log
+          xcodebuild -project iStatBar.xcodeproj -scheme iStatBar -configuration Debug build CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO -derivedDataPath ./DerivedData 2>&1 | tee build.log
 
-      - name: Verify build
+      - name: Check result
         run: |
-          if [ -d build/Build/Products/Debug/iStatBar.app ]; then
+          if grep -q "BUILD SUCCEEDED" build.log; then
             echo "✅ Build successful"
           else
             echo "❌ Build failed"
+            grep -E "error:" build.log | head -10
             exit 1
           fi
