@@ -62,9 +62,9 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           VER=${{ steps.version.outputs.version }}
+          gh tag -d "v${VER}" 2>/dev/null || true
           gh release create "v${VER}" "${{ steps.package.outputs.path }}" \
             --title "iStatBar v${VER}" \
-            --notes "macOS menu bar CPU/Memory/Disk/Network monitor" \
-            --clobber
+            --notes "macOS menu bar CPU/Memory/Disk/Network monitor"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
