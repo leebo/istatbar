@@ -70,7 +70,8 @@ class DetailPanelWindowController: NSObject {
 
     func showPanel(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
         updateSections()
-        panel.show(relativeTo: positioningRect, of: positioningView, preferredEdge: preferredEdge)
+        panel.setFrameOrigin(NSPoint(x: positioningRect.origin.x, y: positioningRect.origin.y - panel.frame.height))
+        panel.makeKeyAndOrderFront(nil)
 
         updateTimer?.invalidate()
         updateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
