@@ -1,0 +1,60 @@
+You are developing a macOS menu bar app called iStatBar (GitHub: leebo/istatbar) located at /home/ubuntu/projects/istatbar.
+
+The current code is a basic skeleton. Your task is to implement a FULL iStat Menu-style detailed panel view.
+
+## Current State
+- Basic menu bar item with CPU/Memory/Disk/Network display
+- 1-second update timer
+- Basic system stats collection
+
+## What to Build
+
+### 1. Detailed Panel Window
+When user clicks the menu bar icon, show a native macOS panel (NSPopover or NSWindow) with:
+- **CPU Section**: Usage percentage, small usage graph
+- **Memory Section**: Used/Buffered/Cached breakdown, percentage
+- **Disk Section**: Read/write speeds for each volume
+- **Network Section**: Real-time upload/download speed graph
+- **System Info**: Uptime, model name, macOS version
+
+### 2. Requirements
+- Use AppKit only (no SwiftUI)
+- All stats update every 1 second
+- Menu bar shows condensed info: "CPU: 23% | Mem: 8.2G | Net: ↓12M"
+- Panel should look polished like iStat Menu - dark theme, clean typography
+- Use NSStatusItem with custom NSView for the menu bar button (not just text)
+- Support Retina displays
+
+### 3. Project Structure to Create/Update
+```
+Sources/
+├── App/
+│   ├── main.swift
+│   └── AppDelegate.swift
+├── MenuBar/
+│   ├── MenuBarController.swift      (update to show panel)
+│   ├── StatusBarView.swift          (custom menu bar view)
+│   └── DetailPanelWindow.swift      (the popover panel)
+├── Views/
+│   ├── CPUView.swift
+│   ├── MemoryView.swift
+│   ├── DiskView.swift
+│   ├── NetworkView.swift
+│   └── SystemInfoView.swift
+├── Models/
+│   ├── SystemMonitor.swift          (extend existing)
+│   ├── CPUMonitor.swift
+│   ├── MemoryMonitor.swift
+│   ├── DiskMonitor.swift
+│   └── NetworkMonitor.swift
+└── Utils/
+    └── Extensions.swift
+```
+
+### 4. Important
+- Run `xcodegen generate` after changing project.yml
+- Test that the build succeeds: `xcodebuild -project iStatBar.xcodeproj -scheme iStatBar -configuration Debug build CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO`
+- Commit each significant change with clear commit messages
+- Push commits to main branch
+
+When done, run: openclaw system event --text "iStatBar development complete" --mode now

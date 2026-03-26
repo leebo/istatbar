@@ -26,6 +26,7 @@ targets:
       - path: Sources
         excludes:
           - "**/.DS_Store"
+          - "**/.claude-task"
     resources:
       - path: Resources
         excludes:
