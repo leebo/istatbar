@@ -70,7 +70,35 @@ class DetailPanelWindowController: NSObject {
 
     func showPanel(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {
         updateSections()
-        panel.setFrameOrigin(NSPoint(x: positioningRect.origin.x, y: positioningRect.origin.y - panel.frame.height))
+
+        guard let buttonWindow = positioningView.window,
+              let screen = buttonWindow.screen ?? NSScreen.main else {
+            panel.makeKeyAndOrderFront(nil)
+            return
+        }
+
+        let screenFrame = screen.visibleFrame
+        let buttonFrameInScreen = buttonWindow.convertToScreen(positioningRect)
+
+        // Calculate panel origin - below the status bar item
+        var origin = CGPoint(
+            x: buttonFrameInScreen.origin.x,
+            y: buttonFrameInScreen.origin.y - panel.frame.height
+        )
+
+        // Ensure panel stays within screen bounds horizontally
+        if origin.x + panel.frame.width > screenFrame.origin.x + screenFrame.width {
+            origin.x = screenFrame.origin.x + screenFrame.width - panel.frame.width - 8
+        }
+        if origin.x < screenFrame.origin.x {
+            origin.x = screenFrame.origin.x + 8
+        }
+        // Ensure panel doesn't go below screen
+        if origin.y < screenFrame.origin.y {
+            origin.y = screenFrame.origin.y
+        }
+
+        panel.setFrameOrigin(origin)
         panel.makeKeyAndOrderFront(nil)
 
         updateTimer?.invalidate()

@@ -1,9 +1,7 @@
 import AppKit
 
 class StatusBarView: NSView {
-    private var cpuLabel: NSTextField!
-    private var memLabel: NSTextField!
-    private var netLabel: NSTextField!
+    private var statusLabel: NSTextField!
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -16,35 +14,28 @@ class StatusBarView: NSView {
     }
 
     private func setup() {
-        cpuLabel = createLabel(fontSize: 11)
-        memLabel = createLabel(fontSize: 11)
-        netLabel = createLabel(fontSize: 11)
+        statusLabel = NSTextField(labelWithString: "--")
+        statusLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        statusLabel.textColor = .labelColor
+        statusLabel.backgroundColor = .clear
+        statusLabel.isBezeled = false
+        statusLabel.isEditable = false
+        statusLabel.lineBreakMode = .byTruncatingTail
+        statusLabel.maximumNumberOfLines = 1
+        statusLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        statusLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let stack = NSStackView(views: [cpuLabel, memLabel, netLabel])
-        stack.orientation = .horizontal
-        stack.spacing = 8
-        stack.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(statusLabel)
 
-        addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4)
+            statusLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -4),
+            statusLabel.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
 
-    private func createLabel(fontSize: CGFloat) -> NSTextField {
-        let label = NSTextField(labelWithString: "--")
-        label.font = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium)
-        label.textColor = .labelColor
-        label.backgroundColor = .clear
-        label.isBezeled = false
-        label.isEditable = false
-        return label
-    }
-
     func update(cpu: String, memory: String, network: String) {
-        cpuLabel.stringValue = cpu
-        memLabel.stringValue = memory
-        netLabel.stringValue = network
+        statusLabel.stringValue = "\(cpu) | \(memory) | \(network)"
     }
 }

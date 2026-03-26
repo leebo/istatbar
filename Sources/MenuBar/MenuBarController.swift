@@ -30,12 +30,12 @@ class MenuBarController: NSObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            let view = StatusBarView(frame: NSRect(x: 0, y: 0, width: 200, height: 22))
+            let view = StatusBarView(frame: NSRect(x: 0, y: 0, width: 100, height: 22))
             statusBarView = view
             button.addSubview(view)
             view.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                view.widthAnchor.constraint(equalToConstant: 200),
+                view.widthAnchor.constraint(equalToConstant: 100),
                 view.heightAnchor.constraint(equalTo: button.heightAnchor),
                 view.centerYAnchor.constraint(equalTo: button.centerYAnchor)
             ])
