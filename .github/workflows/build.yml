@@ -58,12 +58,10 @@ jobs:
 
       - name: Create Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: iStatBar v${{ steps.version.outputs.version }}
-          draft: false
-          prerelease: false
-          files: ${{ steps.package.outputs.path }}
+        run: |
+          VER=${{ steps.version.outputs.version }}
+          gh release create "v${VER}" "${{ steps.package.outputs.path }}" \
+            --title "iStatBar v${VER}" \
+            --notes "macOS menu bar CPU/Memory/Disk/Network monitor"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
