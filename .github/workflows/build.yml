@@ -64,6 +64,7 @@ jobs:
           VER=${{ steps.version.outputs.version }}
           gh release create "v${VER}" "${{ steps.package.outputs.path }}" \
             --title "iStatBar v${VER}" \
-            --notes "macOS menu bar CPU/Memory/Disk/Network monitor"
+            --notes "macOS menu bar CPU/Memory/Disk/Network monitor" \
+            --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
