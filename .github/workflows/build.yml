@@ -1,4 +1,4 @@
-name: Build
+name: Build & Release
 
 on:
   push:
@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     
     steps:
       - uses: actions/checkout@v4
@@ -20,11 +22,18 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep "MARKETING_VERSION" project.yml | head -1 | awk '{print $2}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version: $VERSION"
+
       - name: Build
         run: |
-          xcodebuild -project iStatBar.xcodeproj -scheme iStatBar -configuration Debug build CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO -derivedDataPath ./DerivedData 2>&1 | tee build.log
+          xcodebuild -project iStatBar.xcodeproj -scheme iStatBar -configuration Release build CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO -derivedDataPath ./DerivedData 2>&1 | tee build.log
 
-      - name: Check result
+      - name: Verify build
         run: |
           if grep -q "BUILD SUCCEEDED" build.log; then
             echo "✅ Build successful"
@@ -33,3 +42,28 @@ jobs:
             grep -E "error:" build.log | head -10
             exit 1
           fi
+
+      - name: Package app
+        run: |
+          cd DerivedData/Build/Products/Release
+          zip -r iStatBar-${{ steps.version.outputs.version }}.zip iStatBar.app
+          echo "PACKAGE_PATH=$(pwd)/iStatBar-${{ steps.version.outputs.version }}.zip" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iStatBar-${{ steps.version.outputs.version }}
+          path: ${{ env.PACKAGE_PATH }}
+          retention-days: 30
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: iStatBar v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: ${{ env.PACKAGE_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
