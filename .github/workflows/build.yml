@@ -23,7 +23,7 @@ jobs:
       - name: Get version
         id: version
         run: |
-          VERSION=$(grep "MARKETING_VERSION" project.yml | head -1 | awk '{print $2}')
+          VERSION=$(grep "MARKETING_VERSION" project.yml | head -1 | awk '{print $2}' | tr -d '"')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version: $VERSION"
 
@@ -44,9 +44,10 @@ jobs:
       - name: Package app
         id: package
         run: |
+          VER=${{ steps.version.outputs.version }}
           cd DerivedData/Build/Products/Release
-          zip -r iStatBar-${{ steps.version.outputs.version }}.zip iStatBar.app
-          echo "path=$(pwd)/iStatBar-${{ steps.version.outputs.version }}.zip" >> $GITHUB_OUTPUT
+          zip -r iStatBar-${VER}.zip iStatBar.app
+          echo "path=$(pwd)/iStatBar-${VER}.zip" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
